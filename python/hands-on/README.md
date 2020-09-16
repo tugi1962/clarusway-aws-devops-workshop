@@ -2,3 +2,5 @@
 
 List of hands-on trainings within Python workshop as follows;
 
+
+ 
