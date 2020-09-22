@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Cloudformation Template for Kittens Carousel Static Website on 
+ EC2. This template deploys Kittens Carousel Static website on Amazon 
+ Linux 2 EC2 Instance with custom security group allowing http connections 
+ on 80. Kittens Carousel Static Website is downloaded from GitHub repository,
+ then deployed on Apache Web Server.
+Resources:
+ WebServerSecurityGroup:
+  Type: "AWS::EC2::SecurityGroup"
+  Properties:
+    GroupDescription: Enable HTTP for Apache Web Server #required
+    GroupName: HTTP-SSH
+    SecurityGroupIngress:
+    - IpProtocol: tcp
+      FromPort: "80"
+      ToPort: "80"
+      CidrIp: 0.0.0.0/0
+    - IpProtocol: tcp
+      FromPort: "22"
+      ToPort: "22"
+      CidrIp: 0.0.0.0/0        
+ WebServerInstance:
+  Type: "AWS::EC2::Instance"
+  Properties:
+    ImageId: ami-0c94855ba95c71c99
+    InstanceType: t2.micro
+    KeyName: c
+    SecurityGroups:
+    - Ref: WebServerSecurityGroup
+    Tags:
+     - Key: "Name"
+       Value: !Join    # !Sub Web Server of ${AWS::StackName} Stack
+         - " "
+         - - "Web Server of"
+           - !Ref "AWS::StackName"
+    UserData:
+        'Fn::Base64': 
+          !Sub |
+           #!/bin/bash
+           yum update -y
+           # install apache
+           yum install httpd -y 
+           # start server
+           systemctl start httpd  
+           systemctl enable httpd
+           # service httpd start
+           # chkconfig httpd on
+           #getting index.html
+           cd /var/www/html 
+           sudo wget https://raw.githubusercontent.com/tugi1962/clarusway-aws-devops-workshop/master/aws/projects/101-kittens-carousel-static-website-ec2/static-web/index.html
+           sudo wget https://raw.githubusercontent.com/tugi1962/clarusway-aws-devops-workshop/master/aws/projects/101-kittens-carousel-static-website-ec2/static-web/cat0.jpg
+           sudo wget https://raw.githubusercontent.com/tugi1962/clarusway-aws-devops-workshop/master/aws/projects/101-kittens-carousel-static-website-ec2/static-web/cat1.jpg
+           sudo wget https://raw.githubusercontent.com/tugi1962/clarusway-aws-devops-workshop/master/aws/projects/101-kittens-carousel-static-website-ec2/static-web/cat2.jpg 
+Outputs:
+  PublicDNS:
+    Description: Public DNS Name of the EC2 instance
+    Value: !Join 
+      - "://"
+      - - "http"
+        - !GetAtt 
+          - WebServerInstance
+          - PublicDnsName
